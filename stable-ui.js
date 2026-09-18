@@ -215,7 +215,7 @@
       metrics.push({label,a,b});
     }
     if(!metrics.length)return;
-    panel.insertAdjacentHTML('beforeend',`<div class="stableCompare"><div class="stableHead"><div><span>GRAFISCHER VERGLEICH</span><h3>Du vs. Freund</h3></div><small>Orange = Du · Blau = Freund</small></div>${metrics.map(m=>{const mx=Math.max(1,m.a,m.b);return `<div class="compareChartRow"><span>${esc(m.label)}</span><div><div class="compareTwin"><i class="me" style="width:${Math.max(2,m.a/mx*100)}%"></i><i class="friend" style="width:${Math.max(2,m.b/mx*100)}%"></i></div><div class="compareValues"><span>${fmt(m.a)}</span><span>${fmt(m.b)}</span></div></div></div>`}).join('')}</div>`);
+    panel.insertAdjacentHTML('beforeend',`<div class="stableCompare"><div class="stableHead"><div><span>GRAFISCHER VERGLEICH</span><h3>Du vs. Freund</h3></div><small>Du · Freund</small></div>${metrics.map(m=>{const mx=Math.max(1,m.a,m.b);return `<div class="compareChartRow"><span>${esc(m.label)}</span><div><div class="compareTwin"><i class="me" style="width:${Math.max(2,m.a/mx*100)}%"></i><i class="friend" style="width:${Math.max(2,m.b/mx*100)}%"></i></div><div class="compareValues"><span>${fmt(m.a)}</span><span>${fmt(m.b)}</span></div></div></div>`}).join('')}</div>`);
   }
 
   function afterRender(){
