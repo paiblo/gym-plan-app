@@ -247,8 +247,8 @@
         for(const list of Object.values(p?.groups||{}))for(const [name] of list){
           if(seen.has(name))continue;seen.add(name);
           const state=JSON.parse(localStorage.getItem(WKEY(name))||'null');
-          if(!state||Number(state.history?.length||0)<=Number(before[name]||0))continue;
-          const h=state.history?.[0];if(!h)continue;
+          if(!state)continue;
+          const h=state.history?.[0];if(!h)continue;const prev=before?.[name],key=[h.date??'',h.w??'',h.r??'',JSON.stringify(h.sets??[])].join('|');if(key===prev?.key)continue;
           const sets=Array.isArray(h.sets)&&h.sets.length?h.sets:[[h.w,h.r]];
           const cleanSets=[];
           for(const pair of sets){
