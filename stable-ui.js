@@ -251,7 +251,7 @@
           const sets=Array.isArray(h.sets)&&h.sets.length?h.sets:[[h.w,h.r]];
           const cleanSets=[];
           for(const pair of sets){
-            const w=Number(pair?.[0]),r=Number(pair?.[1]);
+            const w=pair?.[0]==null?Number(h.w):Number(pair[0]),r=pair?.[1]==null?Number(h.r):Number(pair[1]);
             if(!Number.isFinite(w)||!Number.isFinite(r))continue;
             cleanSets.push({w,r});setCount++;volume+=w*r;
           }
