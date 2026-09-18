@@ -58,4 +58,4 @@ async function backfillLegacyHistory(){
 
 window.openSocialProfile=openSocialProfile;
 injectSocialStyles();
-ensureSocialProfile().then(backfillLegacyHistory).then(flushWorkoutOutbox).then(refreshOwnStats).then(hookWorkoutSave).catch(()=>showCloudStatus(false));window.addEventListener('online',()=>flushWorkoutOutbox().catch(()=>{}));
+(async()=>{try{await ensureSocialProfile()}catch{}try{await backfillLegacyHistory()}catch{}try{await flushWorkoutOutbox()}catch{}try{await refreshOwnStats()}catch{}hookWorkoutSave()})().catch(()=>showCloudStatus(false));window.addEventListener('online',()=>{flushWorkoutOutbox().catch(()=>{});try{hookWorkoutSave()}catch{}});
