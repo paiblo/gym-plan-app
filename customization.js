@@ -19,7 +19,7 @@ function rowName(row){return row?.querySelector('b,.socialName')?.textContent?.t
 async function box(box,id,name){if(!box)return;box.textContent=initial(name);const u=await avatar(id);if(u&&box.isConnected)box.innerHTML=`<img src="${u}" alt="Profilbild von ${esc(name)}">`}
 async function avatars(){
  const own=uid(),ownName=document.querySelector('.profileIdentity h2,.socialName')?.textContent?.trim()||'P';
- document.querySelector('#editEmoji')?.remove();
+ const ee=document.querySelector('#editEmoji');if(ee){ee.value='P';ee.hidden=true}
  const pf=document.querySelector('#pageAvatarFallback');if(pf)pf.textContent=initial(ownName);
  const tf=document.querySelector('#premiumProfileFallback');if(tf)tf.textContent=initial(ownName);
  const so=document.querySelector('.socialIdentity .socialAvatar');if(so&&!so.querySelector('img'))box(so,own,ownName);
