@@ -4,7 +4,7 @@
   const hasSession=()=>{try{const s=JSON.parse(localStorage.getItem('gym-auth-session')||'null');return !!s?.access_token}catch{return false}};
   if(hasSession())return;
   const slides=[
-    {icon:'P',kicker:'PAIBLO TRAINING',title:'Dein Training.\nDein Fortschritt.',text:'Plane deine Woche, tracke jedes Set und sieh, wie du wirklich stärker wirst.',chips:['Training','PRs','Fortschritt']},
+    {icon:'P',kicker:'TRAININGSPLANER BY PAIBLO',title:'Dein Training.\nDein Fortschritt.',text:'Plane deine Woche, tracke jedes Set und sieh, wie du wirklich stärker wirst.',chips:['Training','PRs','Fortschritt']},
     {icon:'↗',kicker:'SMART TRACKING',title:'Weniger tippen.\nMehr trainieren.',text:'Ränge, Körperwerte und Trainingsstatistiken werden übersichtlich an einem Ort zusammengeführt.',chips:['Rangsystem','Gewicht','Statistiken']},
     {icon:'◎',kicker:'TRAIN TOGETHER',title:'Vergleichen.\nMotivieren. Wachsen.',text:'Füge Freunde hinzu, vergleicht euren Fortschritt und baut später gemeinsame Battles auf.',chips:['Freunde','Vergleich','Challenges']}
   ];
@@ -14,7 +14,7 @@
     if(document.querySelector('#welcomeScreen'))return;
     const el=document.createElement('section');
     el.id='welcomeScreen';
-    el.innerHTML='<div class="welcomeNoise"></div><div class="welcomeInner"><div class="welcomeBrand"><span class="welcomeMark">P</span><div><b>PAIBLO TRAINING</b><small>Eine App von Paiblo</small></div></div><div id="welcomeSlide"></div><div class="welcomeBottom"><div id="welcomeDots" class="welcomeDots"></div><button id="welcomeNext" class="welcomePrimary"></button><button id="welcomeSkip" class="welcomeSkip">Direkt anmelden</button></div></div>';
+    el.innerHTML='<div class="welcomeNoise"></div><div class="welcomeInner"><div class="welcomeBrand"><span class="welcomeMark">P</span><div><b>TRAININGSPLANER BY PAIBLO</b><small>by Paiblo</small></div></div><div id="welcomeSlide"></div><div class="welcomeBottom"><div id="welcomeDots" class="welcomeDots"></div><button id="welcomeNext" class="welcomePrimary"></button><button id="welcomeSkip" class="welcomeSkip">Direkt anmelden</button></div></div>';
     document.body.appendChild(el);
     el.querySelector('#welcomeNext').onclick=()=>{if(i<slides.length-1){i++;render()}else finish()};
     el.querySelector('#welcomeSkip').onclick=finish;
