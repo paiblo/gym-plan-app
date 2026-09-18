@@ -40,7 +40,7 @@ async function backfillLegacyHistory(){
       for(const h of x?.history||[]){
         if(!h?.date)continue;
         const sets=Array.isArray(h.sets)&&h.sets.length?h.sets:[[h.w,h.r]];
-        let volume=0;for(const pair of sets){const w=Number(pair?.[0]),r=Number(pair?.[1]);if(Number.isFinite(w)&&Number.isFinite(r))volume+=w*r}
+        let volume=0;for(const pair of sets){const w=pair?.[0]==null?Number(h.w):Number(pair[0]),r=pair?.[1]==null?Number(h.r):Number(pair[1]);if(Number.isFinite(w)&&Number.isFinite(r))volume+=w*r}
         rows.push({user_id:cloudSession.user.id,client_event_id:`legacy_${clean(n)}_${h.date}`,occurred_at:h.date,day_key:null,set_count:Math.max(1,sets.length),pr_count:h.pr?1:0,volume:Math.round(volume*100)/100,payload:{source:'legacy_history',exercise:n}})
       }
     }
