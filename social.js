@@ -35,9 +35,7 @@ function newPrCount(before){let c=0,seen=new Set();try{for(const p of Object.val
 async function logWorkoutEvent(evt,before){if(!evt||!before)return false;const changed=[],seen=new Set();let setCount=0,volume=0,prCount=0;try{const p=PLAN[selected];for(const list of Object.values(p?.groups||{}))for(const[name]of list){if(seen.has(name))continue;seen.add(name);const x=JSON.parse(localStorage.getItem(WKEY(name))||'null'),h=x?.history?.[0],prev=before?.[name],key=h?[h.date??'',h.w??'',h.r??'',JSON.stringify(h.sets??[])].join('|'):null;if(!h||key===prev?.key)continue;const sets=Array.isArray(h.sets)&&h.sets.length?h.sets:[[h.w,h.r]],cleanSets=[];for(const pair of sets){const w=pair?.[0]==null?Number(h.w):Number(pair[0]),r=pair?.[1]==null?Number(h.r):Number(pair[1]);if(!Number.isFinite(w)||!Number.isFinite(r))continue;cleanSets.push({w,r});setCount++;volume+=w*r}if(!cleanSets.length)continue;if(h.pr)prCount++;changed.push({name,sets:cleanSets,pr:!!h.pr})}}catch{return false}if(!changed.length||!setCount)return false;const row={user_id:cloudSession.user.id,client_event_id:evt.client_event_id,occurred_at:evt.occurred_at||new Date().toISOString(),day_key:selected,set_count:setCount,pr_count:prCount,volume:Math.round(volume*100)/100,payload:{source:'training_save',exercises:changed}};queueWorkoutRow(row);try{await sendWorkoutRow(row);await refreshOwnStats();return true}catch{return false}}
 function hookWorkoutSave(){const btn=document.querySelector('#saveBtn');if(!btn||btn.dataset.socialHook)return;const original=btn.onclick;btn.dataset.socialHook='1';btn.onclick=async e=>{const evt=collectWorkoutEvent(),before=historySnapshot();original?.call(btn,e);try{await logWorkoutEvent(evt,before);clearTimeout(syncTimer);await pushRemoteState()}catch{showCloudStatus(false)}}}
 async function backfillLegacyHistory(){
-  const marker='gym:social:backfilled:v1';
-  if(localStorage.getItem(marker)==='1')return;
-  const rows=[],seen=new Set();
+  const marker='gym:social:backfilled:v2',rows=[],seen=new Set();
   try{
     for(const p of Object.values(PLAN))for(const list of Object.values(p.groups||{}))for(const[n]of list){
       if(seen.has(n))continue;seen.add(n);
@@ -50,10 +48,13 @@ async function backfillLegacyHistory(){
       }
     }
   }catch{}
-  if(!rows.length){localStorage.setItem(marker,'1');return;}
+  rows.sort((a,b)=>String(a.client_event_id).localeCompare(String(b.client_event_id)));
+  const signature=rows.length?`${rows.length}:${rows[rows.length-1].client_event_id}`:'0';
+  if(localStorage.getItem(marker)===signature)return;
+  if(!rows.length){localStorage.setItem(marker,signature);return;}
   const r=await api('/rest/v1/workout_events?on_conflict=user_id,client_event_id',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify(rows)});
   if(!r.ok)throw new Error('Historische Trainingsdaten konnten nicht übernommen werden');
-  localStorage.setItem(marker,'1');
+  localStorage.setItem(marker,signature);
 }
 
 window.openSocialProfile=openSocialProfile;
