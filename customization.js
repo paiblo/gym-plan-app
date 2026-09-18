@@ -1,6 +1,6 @@
 (()=>{
 if(window.__tpCustomV2)return;window.__tpCustomV2=true;
-const KEY='gym:theme:v1',BRAND='Trainingsplaner by Paiblo';
+const KEY='gym:theme:v1',META_KEY='gym:meta:theme',BRAND='Trainingsplaner by Paiblo';
 const DEF={primary:'#ff8a3d',secondary:'#ffb06d',info:'#38bdf8',success:'#53d28a',warning:'#d39a3a',danger:'#ff5f70',background:'#07090c',surface:'#11171e',surface2:'#0b1016',border:'#202a35',text:'#f6f8fb',muted:'#7e8997',self:'#ff9450',friend:'#38bdf8',chartSets:'#ff9450',chartVolume:'#ffb06d',chartWeight:'#38bdf8',muscleNone:'#35404d',muscleLight:'#38bdf8',muscleMedium:'#ff9b55',muscleStrong:'#ff4d5f'};
 const F=[['primary','Primärfarbe'],['secondary','Sekundärfarbe'],['info','Info / Links'],['success','Erfolg'],['warning','Warnung'],['danger','Fehler / Gefahr'],['background','App-Hintergrund'],['surface','Karten'],['surface2','Felder / Unterflächen'],['border','Rahmen'],['text','Haupttext'],['muted','Sekundärtext'],['self','Vergleich · Du'],['friend','Vergleich · Freund'],['chartSets','Diagramm · Sätze'],['chartVolume','Diagramm · Volumen'],['chartWeight','Diagramm · Gewicht'],['muscleNone','Muskel · keine Daten'],['muscleLight','Muskel · leicht'],['muscleMedium','Muskel · mittel'],['muscleStrong','Muskel · stark']];
 let theme=load(),timer=null,patching=false;
@@ -19,7 +19,7 @@ function apply(save=false){
   document.documentElement.style.setProperty('--tp-on-primary',onColor(theme.primary));
   document.documentElement.style.setProperty('--tp-on-secondary',onColor(theme.secondary));
   setAttr(document.querySelector('meta[name="theme-color"]'),'content',theme.background);
-  if(save)localStorage.setItem(KEY,JSON.stringify(theme));
+  if(save){localStorage.setItem(KEY,JSON.stringify(theme));localStorage.setItem(META_KEY,String(Date.now()))}
   recolor();syncInputs();
 }
 async function avatarUrl(id){
@@ -93,7 +93,7 @@ function schedule(){clearTimeout(timer);timer=setTimeout(()=>patch(),60)}
 apply();
 const start=()=>{patch();new MutationObserver(muts=>{if(muts.some(m=>m.addedNodes.length||m.removedNodes.length))schedule()}).observe(document.body,{childList:true,subtree:true})};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-window.addEventListener('storage',e=>{if(e.key===KEY){theme=load();apply();schedule()}});
+window.addEventListener('storage',e=>{if(e.key===KEY){theme=load();apply();schedule()}});window.addEventListener('gym:snapshot-applied',()=>{theme=load();apply();schedule()});window.addEventListener('gym:avatar-updated',()=>{invalidateOwnAvatar();schedule()});
 document.addEventListener('change',e=>{if(e.target?.id==='profileAvatarFile'||e.target?.id==='obAvatar'){setTimeout(()=>{invalidateOwnAvatar();schedule()},1200)}});
 window.TrainingsplanerTheme={get:()=>({...theme}),reset:()=>{theme={...DEF};apply(true)},apply:x=>{theme={...theme,...x};apply(true)},refreshAvatars:()=>{avatarCache.clear();schedule()}};
 })();
