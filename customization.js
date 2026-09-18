@@ -34,9 +34,9 @@ async function avatarUrl(id){
       return URL.createObjectURL(await a.blob());
     }catch{return null}
   })();
-  avatarCache.set(id,promise);return promise;
+  avatarCache.set(id,promise);promise.then(u=>{if(!u&&avatarCache.get(id)===promise)avatarCache.delete(id)});return promise;
 }
-function invalidateOwnAvatar(){const id=uid();if(!id)return;const old=avatarCache.get(id);avatarCache.delete(id);Promise.resolve(old).then(u=>{if(u)try{URL.revokeObjectURL(u)}catch{}})}
+function invalidateOwnAvatar(){const id=uid();if(!id)return;const old=avatarCache.get(id);avatarCache.delete(id);document.querySelectorAll(`[data-tp-avatar-id="${id}"]`).forEach(e=>e.dataset.tpAvatarResolved='0');Promise.resolve(old).then(u=>{if(u)try{URL.revokeObjectURL(u)}catch{}})}
 async function setAvatar(box,id,name){
   if(!box)return;
   const fallback=initial(name);
