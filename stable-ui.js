@@ -23,7 +23,10 @@
   }
   async function getEvents(limit=500){
     const id=uid();if(!id)return[];
-    return json(`/rest/v1/workout_events?select=occurred_at,day_key,set_count,pr_count,volume,payload&user_id=eq.${encodeURIComponent(id)}&order=occurred_at.desc&limit=${limit}`);
+    let remote=[];try{remote=await json(`/rest/v1/workout_events?select=client_event_id,occurred_at,day_key,set_count,pr_count,volume,payload&user_id=eq.${encodeURIComponent(id)}&order=occurred_at.desc&limit=${limit}`)}catch{}
+    const pending=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k?.startsWith('gym:outbox:workout:'))continue;try{const row=JSON.parse(localStorage.getItem(k)||'null');if(row?.user_id===id)pending.push(row)}catch{}}
+    const map=new Map();for(const e of [...pending,...remote]){const k=e.client_event_id||['fallback',e.occurred_at,e.day_key,e.volume].join('|');map.set(k,e)}
+    return [...map.values()].sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at)).slice(0,limit);
   }
   async function getWeights(limit=60){
     const id=uid();if(!id)return[];
@@ -271,9 +274,12 @@
         volume:Math.round(volume*100)/100,
         payload:{source:'training_save',exercises:changed}
       };
-      const r=await api('/rest/v1/workout_events',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(row)});
-      if(!r.ok)throw new Error(`workout_event_${r.status}`);
-      try{if(typeof refreshOwnStats==='function')await refreshOwnStats()}catch{}
+      try{
+        if(typeof window.queueWorkoutRow==='function')window.queueWorkoutRow(row);
+        if(typeof window.sendWorkoutRow==='function')await window.sendWorkoutRow(row);
+        else{const r=await api('/rest/v1/workout_events?on_conflict=user_id,client_event_id',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify(row)});if(!r.ok)throw new Error(`workout_event_${r.status}`)}
+        try{if(typeof refreshOwnStats==='function')await refreshOwnStats()}catch{}
+      }catch{}
       if(currentMode()==='dashboard')scheduleDashboard(250);
     };
     accurate.__paibloAccurate=true;
