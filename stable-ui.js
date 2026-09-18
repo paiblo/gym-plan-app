@@ -23,7 +23,7 @@
   }
   async function getEvents(limit=500){
     const id=uid();if(!id)return[];
-    return json(`/rest/v1/workout_events?select=occurred_at,day_key,set_count,pr_count,volume,payload&user_id=eq.${encodeURIComponent(id)}&order=occurred_at.asc&limit=${limit}`);
+    return json(`/rest/v1/workout_events?select=occurred_at,day_key,set_count,pr_count,volume,payload&user_id=eq.${encodeURIComponent(id)}&order=occurred_at.desc&limit=${limit}`);
   }
   async function getWeights(limit=60){
     const id=uid();if(!id)return[];
@@ -209,8 +209,9 @@
     for(const row of rows){
       const p=[...row.children];if(p.length<4)continue;
       const label=p[0].textContent.trim();
-      const a=parseFloat(p[1].textContent.replace(/[^0-9,.-]/g,'').replace(',','.'))||0;
-      const b=parseFloat(p[3].textContent.replace(/[^0-9,.-]/g,'').replace(',','.'))||0;
+      const parseMetric=t=>Number(String(t||'').replace(/[^0-9,.-]/g,'').replace(/\./g,'').replace(',','.'))||0;
+      const a=parseMetric(p[1].textContent);
+      const b=parseMetric(p[3].textContent);
       if(/gewicht/i.test(label))continue;
       metrics.push({label,a,b});
     }
