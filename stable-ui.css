@@ -63,3 +63,13 @@ body.premiumApp main{width:100%;max-width:760px;margin:0 auto;padding:12px 14px 
   .dashboardMiniKpis{grid-template-columns:repeat(4,minmax(0,1fr))}
   #stableAnalytics .stableCharts{grid-template-columns:1fr 1fr!important}
 }
+
+
+/* Anatomy hotfix v26: one source image only, so iOS/Safari cannot duplicate cropped SVG instances */
+.anatomyPair{display:contents!important}
+.anatomyUnified{display:block!important;width:100%!important;max-width:680px!important;height:auto!important;margin:0 auto!important;overflow:visible!important}
+.stableAnatomy .anatomyUnified .anatomyBase{opacity:.86!important}
+@media(max-width:420px){
+  .anatomyPair{width:auto!important;margin:0!important}
+  .anatomyUnified{width:100%!important;max-width:none!important}
+}
