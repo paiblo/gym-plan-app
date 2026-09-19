@@ -46,3 +46,20 @@ body.premiumApp main{width:100%;max-width:760px;margin:0 auto;padding:12px 14px 
 .muscleRow.is-selected{border-color:#344353;background:rgba(255,255,255,.035)}
 .muscleRow:focus-visible{outline:2px solid #73859a;outline-offset:2px}
 @media(max-width:420px){.stableAnatomy{padding:7px 0!important}.anatomyPair{width:108%;margin-left:-4%;}.muscleRow{grid-template-columns:88px minmax(70px,1fr) 68px!important;gap:7px!important;padding:5px 2px!important}}
+
+
+/* Dashboard v3 – Auswertungen stehen direkt unter den Haupt-KPIs */
+#stableDashboardData{display:block!important;width:100%!important;min-height:90px;margin-top:10px}
+.dashboardLoading{min-height:96px!important}
+.dashboardOverviewCard{margin-top:10px!important}
+.dashboardMiniKpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 12px}
+.dashboardMiniKpis>div{min-width:0;padding:11px 12px;border:1px solid var(--tp-border,#202a35);border-radius:13px;background:var(--tp-surface-2,#0b1016)}
+.dashboardMiniKpis span{display:block;color:var(--tp-muted,#7e8997);font-size:8px;font-weight:850;text-transform:uppercase;letter-spacing:.55px;margin-bottom:5px}
+.dashboardMiniKpis b{display:block;color:var(--tp-text,#f6f8fb);font-size:15px;line-height:1.15;overflow-wrap:anywhere}
+#stableAnalytics .stableCharts{grid-template-columns:1fr!important}
+#stableAnalytics .chartCard{display:block!important;min-height:150px!important}
+#stableAnalytics .chartCard svg{width:100%!important;min-height:108px!important}
+@media(min-width:560px){
+  .dashboardMiniKpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #stableAnalytics .stableCharts{grid-template-columns:1fr 1fr!important}
+}
