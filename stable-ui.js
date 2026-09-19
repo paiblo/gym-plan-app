@@ -21,12 +21,24 @@
     if(!r.ok)throw new Error(data?.message||data?.error||`HTTP ${r.status}`);
     return data;
   }
+  function isLegacyEvent(e){return String(e?.payload?.source||'')==='legacy_history'}
+  function dedupeWorkoutEvents(rows,limit=500){
+    const sorted=[...(rows||[])].sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at));
+    const modern=sorted.filter(e=>!isLegacyEvent(e));
+    const modernTimes=modern.map(e=>new Date(e.occurred_at).getTime()).filter(Number.isFinite);
+    const clean=sorted.filter(e=>{
+      if(!isLegacyEvent(e))return true;
+      const t=new Date(e.occurred_at).getTime();if(!Number.isFinite(t))return false;
+      return !modernTimes.some(mt=>Math.abs(mt-t)<=300000);
+    });
+    return clean.slice(0,limit);
+  }
   async function getEvents(limit=500){
     const id=uid();if(!id)return[];
-    let remote=[];try{remote=await json(`/rest/v1/workout_events?select=client_event_id,occurred_at,day_key,set_count,pr_count,volume,payload&user_id=eq.${encodeURIComponent(id)}&order=occurred_at.desc&limit=${limit}`)}catch{}
+    let remote=[];try{remote=await json(`/rest/v1/workout_events?select=client_event_id,occurred_at,day_key,set_count,pr_count,volume,payload&user_id=eq.${encodeURIComponent(id)}&order=occurred_at.desc&limit=${Math.max(limit,800)}`)}catch{}
     const pending=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k?.startsWith('gym:outbox:workout:'))continue;try{const row=JSON.parse(localStorage.getItem(k)||'null');if(row?.user_id===id)pending.push(row)}catch{}}
     const map=new Map();for(const e of [...pending,...remote]){const k=e.client_event_id||['fallback',e.occurred_at,e.day_key,e.volume].join('|');map.set(k,e)}
-    return [...map.values()].sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at)).slice(0,limit);
+    return dedupeWorkoutEvents([...map.values()],limit);
   }
   async function getWeights(limit=60){
     const id=uid();if(!id)return[];
@@ -122,20 +134,62 @@
   function intensity(v){const n=Number(v||0);return n<=0?'none':n<=5?'light':n<=12?'medium':'strong'}
   function intensityText(v){return{none:'Keine Daten',light:'Leicht',medium:'Mittel',strong:'Stark'}[intensity(v)]}
 
-  function heatZones(load){
-    const zones=[
-      ['Brust','chestL'],['Brust','chestR'],['Schultern','shoulderL'],['Schultern','shoulderR'],['Arme','armL'],['Arme','armR'],['Core','core'],['Beine','legL'],['Beine','legR'],
-      ['Rücken','backUpper'],['Unterer Rücken','backLower'],['Beine','backLegL'],['Beine','backLegR']
-    ];
-    return zones.map(([m,c])=>`<i class="heatZone ${c} ${intensity(load[m]?.sets)}" title="${esc(m)}: ${fmt(load[m]?.sets||0)} Sätze in 30 Tagen"></i>`).join('');
+  function zone(muscle,cls,d,load){
+    const level=intensity(load[muscle]?.sets);
+    const title=`${muscle}: ${fmt(load[muscle]?.sets||0)} Sätze in 30 Tagen`;
+    return `<path class="anatomyZone ${level} ${cls}" data-muscle="${esc(muscle)}" d="${d}" role="button" tabindex="0" aria-label="${esc(title)}"><title>${esc(title)}</title></path>`;
+  }
+  function frontFigure(load){
+    return `<svg class="anatomyFigure anatomyFront" viewBox="55 0 640 1256" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Muskelansicht vorne">
+      <image class="anatomyBase" href="${ANATOMY}" x="0" y="0" width="1442" height="1256" preserveAspectRatio="none"/>
+      ${zone('Schultern','frontShoulderL','M244 214 C261 182 299 174 326 194 C337 213 330 250 304 267 C276 268 250 251 244 214 Z',load)}
+      ${zone('Schultern','frontShoulderR','M456 194 C483 174 521 182 538 214 C532 251 506 268 478 267 C452 250 445 213 456 194 Z',load)}
+      ${zone('Brust','frontChestL','M315 244 C334 222 373 216 392 235 L393 357 C358 365 325 347 306 319 C298 290 301 262 315 244 Z',load)}
+      ${zone('Brust','frontChestR','M394 235 C413 216 452 222 471 244 C485 262 488 290 480 319 C461 347 428 365 393 357 L393 235 Z',load)}
+      ${zone('Arme','frontArmL','M229 270 C250 265 269 279 275 304 L267 447 C263 501 245 566 219 613 C201 608 190 585 194 552 L208 373 C211 322 214 286 229 270 Z',load)}
+      ${zone('Arme','frontArmR','M557 270 C572 286 575 322 578 373 L592 552 C596 585 585 608 567 613 C541 566 523 501 519 447 L511 304 C517 279 536 265 557 270 Z',load)}
+      ${zone('Core','frontCore','M336 367 C355 350 431 350 450 367 C462 416 456 513 441 592 C423 615 363 615 345 592 C330 513 324 416 336 367 Z',load)}
+      ${zone('Beine','frontLegL','M326 608 C349 594 376 597 392 617 L383 857 L360 1128 C341 1145 319 1135 312 1107 L313 875 C303 773 305 665 326 608 Z',load)}
+      ${zone('Beine','frontLegR','M394 617 C410 597 437 594 460 608 C481 665 483 773 473 875 L474 1107 C467 1135 445 1145 426 1128 L403 857 Z',load)}
+    </svg>`;
+  }
+  function backFigure(load){
+    return `<svg class="anatomyFigure anatomyBack" viewBox="748 0 640 1256" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Muskelansicht hinten">
+      <image class="anatomyBase" href="${ANATOMY}" x="0" y="0" width="1442" height="1256" preserveAspectRatio="none"/>
+      ${zone('Schultern','backShoulderL','M925 205 C947 181 981 178 1005 198 C1019 220 1010 254 985 270 C957 271 932 252 925 205 Z',load)}
+      ${zone('Schultern','backShoulderR','M1179 198 C1203 178 1237 181 1259 205 C1252 252 1227 271 1199 270 C1174 254 1165 220 1179 198 Z',load)}
+      ${zone('Rücken','backUpper','M986 254 C1024 220 1158 220 1196 254 C1216 314 1195 431 1147 505 C1111 530 1071 530 1035 505 C987 431 966 314 986 254 Z',load)}
+      ${zone('Unterer Rücken','backLower','M1043 494 C1066 475 1116 475 1139 494 C1154 537 1146 601 1122 639 C1105 653 1080 653 1063 639 C1039 601 1031 537 1043 494 Z',load)}
+      ${zone('Arme','backArmL','M908 268 C926 260 948 276 956 302 L947 446 C940 507 919 568 894 615 C876 606 866 581 870 548 L885 368 C888 320 893 284 908 268 Z',load)}
+      ${zone('Arme','backArmR','M1276 268 C1291 284 1296 320 1299 368 L1314 548 C1318 581 1308 606 1290 615 C1265 568 1244 507 1237 446 L1228 302 C1236 276 1258 260 1276 268 Z',load)}
+      ${zone('Beine','backLegL','M1028 622 C1050 600 1081 599 1098 620 L1088 858 L1064 1129 C1047 1145 1025 1135 1018 1106 L1018 884 C1006 779 1007 672 1028 622 Z',load)}
+      ${zone('Beine','backLegR','M1100 620 C1117 599 1148 600 1170 622 C1191 672 1192 779 1180 884 L1180 1106 C1173 1135 1151 1145 1134 1129 L1110 858 Z',load)}
+    </svg>`;
+  }
+  function anatomyFigure(load){
+    return `<div class="anatomyPair">${frontFigure(load)}${backFigure(load)}</div>`;
   }
   function muscleRows(load){
     const mx=Math.max(1,...Object.values(load).map(v=>v.sets));
-    return Object.entries(load).map(([name,v])=>`<div class="muscleRow"><div><span>${esc(name)}</span><small>${v.days} ${v.days===1?'Trainingstag':'Trainingstage'}</small></div><div class="muscleTrack"><i class="${intensity(v.sets)}" style="width:${v.sets?Math.max(7,Math.round(v.sets/mx*100)):0}%"></i></div><b>${fmt(v.sets)} S. · ${intensityText(v.sets)}</b></div>`).join('');
+    return Object.entries(load).map(([name,v])=>`<button type="button" class="muscleRow" data-muscle="${esc(name)}" aria-pressed="false"><div><span>${esc(name)}</span><small>${v.days} ${v.days===1?'Trainingstag':'Trainingstage'}</small></div><div class="muscleTrack"><i class="${intensity(v.sets)}" style="width:${v.sets?Math.max(7,Math.round(v.sets/mx*100)):0}%"></i></div><b>${fmt(v.sets)} S. · ${intensityText(v.sets)}</b></button>`).join('');
+  }
+  function bindMuscleInteractions(){
+    const root=document.querySelector('#stableBodyStatus');if(!root)return;
+    const setSelected=name=>{
+      const active=root.dataset.selected===name?'':name;
+      root.dataset.selected=active;
+      root.querySelectorAll('.muscleRow').forEach(row=>{const on=!!active&&row.dataset.muscle===active;row.classList.toggle('is-selected',on);row.setAttribute('aria-pressed',on?'true':'false')});
+      root.querySelectorAll('.anatomyZone').forEach(z=>z.classList.toggle('is-selected',!!active&&z.dataset.muscle===active));
+    };
+    root.querySelectorAll('.muscleRow').forEach(row=>row.addEventListener('click',()=>setSelected(row.dataset.muscle)));
+    root.querySelectorAll('.anatomyZone').forEach(z=>{
+      z.addEventListener('click',()=>setSelected(z.dataset.muscle));
+      z.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(z.dataset.muscle)}});
+    });
   }
 
   function bodyCard(load){
-    return `<section class="stableCard stableBody" id="stableBodyStatus"><div class="stableHead"><div><span>KÖRPER & FOKUS</span><h3>Trainingsfokus · 30 Tage</h3></div><small>Trainingsmenge, nicht Muskelstärke</small></div><div class="stableBodyGrid"><div><div class="stableAnatomy"><img src="${ANATOMY}" alt="Anatomische Muskelansicht vorne und hinten">${heatZones(load)}</div><div class="stableLegend"><span><i class="l0"></i>keine Daten</span><span><i class="l1"></i>leicht</span><span><i class="l2"></i>mittel</span><span><i class="l3"></i>stark</span></div></div><div class="muscleRows">${muscleRows(load)}</div></div></section>`;
+    return `<section class="stableCard stableBody" id="stableBodyStatus"><div class="stableHead"><div><span>KÖRPER & FOKUS</span><h3>Trainingsfokus · 30 Tage</h3></div><small>Trainingsmenge, nicht Muskelstärke</small></div><div class="stableBodyGrid"><div><div class="stableAnatomy">${anatomyFigure(load)}</div><div class="stableLegend"><span><i class="l0"></i>keine Daten</span><span><i class="l1"></i>leicht</span><span><i class="l2"></i>mittel</span><span><i class="l3"></i>stark</span></div><a class="anatomyCredit" href="https://commons.wikimedia.org/wiki/File:Muscles_front_and_back.svg" target="_blank" rel="noopener">Anatomie: OpenStax & Tomáš Kebert · CC BY-SA 4.0</a></div><div class="muscleRows">${muscleRows(load)}</div></div></section>`;
   }
 
   function lastDays(ev,count=7){
@@ -188,6 +242,7 @@
       let host=area.querySelector('#stableDashboardData');
       if(!host){host=document.createElement('div');host.id='stableDashboardData';const quick=area.querySelector('.quickSection');quick?quick.insertAdjacentElement('beforebegin',host):area.appendChild(host)}
       host.innerHTML=bodyCard(muscleLoads(ev))+analyticsCard(ev,w);
+      bindMuscleInteractions();
       host.dataset.updated=new Date().toISOString();
     }catch(e){
       console.warn('Paiblo dashboard refresh failed',e);
