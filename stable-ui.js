@@ -2,7 +2,6 @@
   if(window.__paibloStableUIV2)return;
   window.__paibloStableUIV2=true;
 
-  const ANATOMY='https://upload.wikimedia.org/wikipedia/commons/e/ef/Muscles_front_and_back.svg';
   let renderToken=0;
   let refreshTimer=null;
   let refreshInFlight=false;
@@ -134,32 +133,77 @@
   function intensity(v){const n=Number(v||0);return n<=0?'none':n<=5?'light':n<=12?'medium':'strong'}
   function intensityText(v){return{none:'Keine Daten',light:'Leicht',medium:'Mittel',strong:'Stark'}[intensity(v)]}
 
-  function zone(muscle,cls,d,load){
+  function bodyZone(muscle,cls,d,load){
     const level=intensity(load[muscle]?.sets);
     const title=`${muscle}: ${fmt(load[muscle]?.sets||0)} Sätze in 30 Tagen`;
-    return `<path class="anatomyZone ${level} ${cls}" data-muscle="${esc(muscle)}" d="${d}" role="button" tabindex="0" aria-label="${esc(title)}"><title>${esc(title)}</title></path>`;
+    return `<path class="bodyMuscleZone ${level} ${cls}" data-muscle="${esc(muscle)}" d="${d}" role="button" tabindex="0" aria-label="${esc(title)}"><title>${esc(title)}</title></path>`;
+  }
+  function frontBodySvg(load){
+    return `<svg class="bodyFocusFigure front" viewBox="0 0 220 520" role="img" aria-label="Körperansicht vorne">
+      <g class="bodyBase">
+        <ellipse cx="110" cy="42" rx="27" ry="33"/>
+        <path d="M97 70 L123 70 L127 95 L93 95 Z"/>
+        <path d="M82 89 C66 95 55 110 52 139 L57 244 C61 276 78 304 110 320 C142 304 159 276 163 244 L168 139 C165 110 154 95 138 89 C130 86 122 83 118 81 L102 81 C98 83 90 86 82 89 Z"/>
+        <path d="M57 118 C41 124 31 143 27 171 L18 294 C16 317 26 333 41 329 C49 323 53 313 56 302 L63 210 L66 145 Z"/>
+        <path d="M163 118 C179 124 189 143 193 171 L202 294 C204 317 194 333 179 329 C171 323 167 313 164 302 L157 210 L154 145 Z"/>
+        <path d="M82 304 C70 326 66 359 68 404 L72 492 C79 509 92 509 98 488 L106 386 L108 320 Z"/>
+        <path d="M138 304 C150 326 154 359 152 404 L148 492 C141 509 128 509 122 488 L114 386 L112 320 Z"/>
+      </g>
+
+      ${bodyZone('Schultern','frontShoulderL','M57 121 C60 103 74 91 91 94 L94 128 C79 134 66 130 57 121 Z',load)}
+      ${bodyZone('Schultern','frontShoulderR','M163 121 C160 103 146 91 129 94 L126 128 C141 134 154 130 163 121 Z',load)}
+      ${bodyZone('Brust','frontChestL','M76 130 C84 117 101 113 109 122 L109 189 C94 192 80 185 72 171 C70 151 71 140 76 130 Z',load)}
+      ${bodyZone('Brust','frontChestR','M144 130 C136 117 119 113 111 122 L111 189 C126 192 140 185 148 171 C150 151 149 140 144 130 Z',load)}
+      ${bodyZone('Arme','frontArmL','M43 145 C52 136 61 142 64 158 L57 246 C53 271 48 298 36 316 C26 309 24 292 28 273 L35 187 C37 164 39 151 43 145 Z',load)}
+      ${bodyZone('Arme','frontArmR','M177 145 C168 136 159 142 156 158 L163 246 C167 271 172 298 184 316 C194 309 196 292 192 273 L185 187 C183 164 181 151 177 145 Z',load)}
+      ${bodyZone('Core','frontCore','M87 193 C98 187 122 187 133 193 L136 276 C130 299 121 311 110 316 C99 311 90 299 84 276 Z',load)}
+      ${bodyZone('Beine','frontLegL','M82 319 C94 312 104 319 106 339 L100 405 L93 487 C88 501 79 501 73 488 L70 406 C68 370 71 338 82 319 Z',load)}
+      ${bodyZone('Beine','frontLegR','M138 319 C126 312 116 319 114 339 L120 405 L127 487 C132 501 141 501 147 488 L150 406 C152 370 149 338 138 319 Z',load)}
+
+      <g class="bodyContours" aria-hidden="true">
+        <path d="M110 95 L110 315"/>
+        <path d="M83 132 C93 140 102 142 110 140 C118 142 127 140 137 132"/>
+        <path d="M89 210 H131 M88 232 H132 M87 255 H133"/>
+        <path d="M78 319 C87 334 99 340 110 340 C121 340 133 334 142 319"/>
+        <path d="M85 337 L78 477 M135 337 L142 477"/>
+      </g>
+      <text class="bodyViewLabel" x="110" y="515" text-anchor="middle">VORNE</text>
+    </svg>`;
+  }
+  function backBodySvg(load){
+    return `<svg class="bodyFocusFigure back" viewBox="0 0 220 520" role="img" aria-label="Körperansicht hinten">
+      <g class="bodyBase">
+        <ellipse cx="110" cy="42" rx="27" ry="33"/>
+        <path d="M97 70 L123 70 L127 95 L93 95 Z"/>
+        <path d="M82 89 C66 95 55 110 52 139 L57 244 C61 276 78 304 110 320 C142 304 159 276 163 244 L168 139 C165 110 154 95 138 89 C130 86 122 83 118 81 L102 81 C98 83 90 86 82 89 Z"/>
+        <path d="M57 118 C41 124 31 143 27 171 L18 294 C16 317 26 333 41 329 C49 323 53 313 56 302 L63 210 L66 145 Z"/>
+        <path d="M163 118 C179 124 189 143 193 171 L202 294 C204 317 194 333 179 329 C171 323 167 313 164 302 L157 210 L154 145 Z"/>
+        <path d="M82 304 C70 326 66 359 68 404 L72 492 C79 509 92 509 98 488 L106 386 L108 320 Z"/>
+        <path d="M138 304 C150 326 154 359 152 404 L148 492 C141 509 128 509 122 488 L114 386 L112 320 Z"/>
+      </g>
+
+      ${bodyZone('Schultern','backShoulderL','M57 121 C60 103 74 91 91 94 L95 128 C80 134 66 130 57 121 Z',load)}
+      ${bodyZone('Schultern','backShoulderR','M163 121 C160 103 146 91 129 94 L125 128 C140 134 154 130 163 121 Z',load)}
+      ${bodyZone('Rücken','backUpper','M77 126 C87 111 98 106 110 108 C122 106 133 111 143 126 L149 207 C139 237 126 249 110 252 C94 249 81 237 71 207 Z',load)}
+      ${bodyZone('Unterer Rücken','backLower','M87 220 C98 212 122 212 133 220 L137 281 C130 301 121 312 110 316 C99 312 90 301 83 281 Z',load)}
+      ${bodyZone('Arme','backArmL','M43 145 C52 136 61 142 64 158 L57 246 C53 271 48 298 36 316 C26 309 24 292 28 273 L35 187 C37 164 39 151 43 145 Z',load)}
+      ${bodyZone('Arme','backArmR','M177 145 C168 136 159 142 156 158 L163 246 C167 271 172 298 184 316 C194 309 196 292 192 273 L185 187 C183 164 181 151 177 145 Z',load)}
+      ${bodyZone('Beine','backLegL','M82 319 C94 312 104 319 106 339 L100 405 L93 487 C88 501 79 501 73 488 L70 406 C68 370 71 338 82 319 Z',load)}
+      ${bodyZone('Beine','backLegR','M138 319 C126 312 116 319 114 339 L120 405 L127 487 C132 501 141 501 147 488 L150 406 C152 370 149 338 138 319 Z',load)}
+
+      <g class="bodyContours" aria-hidden="true">
+        <path d="M110 94 L110 316"/>
+        <path d="M78 140 C91 156 100 164 110 165 C120 164 129 156 142 140"/>
+        <path d="M80 208 C93 218 102 222 110 222 C118 222 127 218 140 208"/>
+        <path d="M86 289 C96 298 103 302 110 302 C117 302 124 298 134 289"/>
+        <path d="M78 319 C87 334 99 340 110 340 C121 340 133 334 142 319"/>
+        <path d="M85 337 L78 477 M135 337 L142 477"/>
+      </g>
+      <text class="bodyViewLabel" x="110" y="515" text-anchor="middle">HINTEN</text>
+    </svg>`;
   }
   function anatomyFigure(load){
-    return `<svg class="anatomyFigure anatomyUnified" viewBox="0 0 1442 1256" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Muskelansicht vorne und hinten">
-      <image class="anatomyBase" href="${ANATOMY}" x="0" y="0" width="1442" height="1256" preserveAspectRatio="xMidYMid meet"/>
-      ${zone('Schultern','frontShoulderL','M244 214 C261 182 299 174 326 194 C337 213 330 250 304 267 C276 268 250 251 244 214 Z',load)}
-      ${zone('Schultern','frontShoulderR','M456 194 C483 174 521 182 538 214 C532 251 506 268 478 267 C452 250 445 213 456 194 Z',load)}
-      ${zone('Brust','frontChestL','M315 244 C334 222 373 216 392 235 L393 357 C358 365 325 347 306 319 C298 290 301 262 315 244 Z',load)}
-      ${zone('Brust','frontChestR','M394 235 C413 216 452 222 471 244 C485 262 488 290 480 319 C461 347 428 365 393 357 L393 235 Z',load)}
-      ${zone('Arme','frontArmL','M229 270 C250 265 269 279 275 304 L267 447 C263 501 245 566 219 613 C201 608 190 585 194 552 L208 373 C211 322 214 286 229 270 Z',load)}
-      ${zone('Arme','frontArmR','M557 270 C572 286 575 322 578 373 L592 552 C596 585 585 608 567 613 C541 566 523 501 519 447 L511 304 C517 279 536 265 557 270 Z',load)}
-      ${zone('Core','frontCore','M336 367 C355 350 431 350 450 367 C462 416 456 513 441 592 C423 615 363 615 345 592 C330 513 324 416 336 367 Z',load)}
-      ${zone('Beine','frontLegL','M326 608 C349 594 376 597 392 617 L383 857 L360 1128 C341 1145 319 1135 312 1107 L313 875 C303 773 305 665 326 608 Z',load)}
-      ${zone('Beine','frontLegR','M394 617 C410 597 437 594 460 608 C481 665 483 773 473 875 L474 1107 C467 1135 445 1145 426 1128 L403 857 Z',load)}
-      ${zone('Schultern','backShoulderL','M925 205 C947 181 981 178 1005 198 C1019 220 1010 254 985 270 C957 271 932 252 925 205 Z',load)}
-      ${zone('Schultern','backShoulderR','M1179 198 C1203 178 1237 181 1259 205 C1252 252 1227 271 1199 270 C1174 254 1165 220 1179 198 Z',load)}
-      ${zone('Rücken','backUpper','M986 254 C1024 220 1158 220 1196 254 C1216 314 1195 431 1147 505 C1111 530 1071 530 1035 505 C987 431 966 314 986 254 Z',load)}
-      ${zone('Unterer Rücken','backLower','M1043 494 C1066 475 1116 475 1139 494 C1154 537 1146 601 1122 639 C1105 653 1080 653 1063 639 C1039 601 1031 537 1043 494 Z',load)}
-      ${zone('Arme','backArmL','M908 268 C926 260 948 276 956 302 L947 446 C940 507 919 568 894 615 C876 606 866 581 870 548 L885 368 C888 320 893 284 908 268 Z',load)}
-      ${zone('Arme','backArmR','M1276 268 C1291 284 1296 320 1299 368 L1314 548 C1318 581 1308 606 1290 615 C1265 568 1244 507 1237 446 L1228 302 C1236 276 1258 260 1276 268 Z',load)}
-      ${zone('Beine','backLegL','M1028 622 C1050 600 1081 599 1098 620 L1088 858 L1064 1129 C1047 1145 1025 1135 1018 1106 L1018 884 C1006 779 1007 672 1028 622 Z',load)}
-      ${zone('Beine','backLegR','M1100 620 C1117 599 1148 600 1170 622 C1191 672 1192 779 1180 884 L1180 1106 C1173 1135 1151 1145 1134 1129 L1110 858 Z',load)}
-    </svg>`;
+    return `<div class="bodyFocusMap" aria-label="Trainingsfokus nach Muskelgruppen">${frontBodySvg(load)}${backBodySvg(load)}</div>`;
   }
   function muscleRows(load){
     const mx=Math.max(1,...Object.values(load).map(v=>v.sets));
@@ -171,17 +215,17 @@
       const active=root.dataset.selected===name?'':name;
       root.dataset.selected=active;
       root.querySelectorAll('.muscleRow').forEach(row=>{const on=!!active&&row.dataset.muscle===active;row.classList.toggle('is-selected',on);row.setAttribute('aria-pressed',on?'true':'false')});
-      root.querySelectorAll('.anatomyZone').forEach(z=>z.classList.toggle('is-selected',!!active&&z.dataset.muscle===active));
+      root.querySelectorAll('.bodyMuscleZone').forEach(z=>z.classList.toggle('is-selected',!!active&&z.dataset.muscle===active));
     };
     root.querySelectorAll('.muscleRow').forEach(row=>row.addEventListener('click',()=>setSelected(row.dataset.muscle)));
-    root.querySelectorAll('.anatomyZone').forEach(z=>{
+    root.querySelectorAll('.bodyMuscleZone').forEach(z=>{
       z.addEventListener('click',()=>setSelected(z.dataset.muscle));
       z.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(z.dataset.muscle)}});
     });
   }
 
   function bodyCard(load){
-    return `<section class="stableCard stableBody" id="stableBodyStatus"><div class="stableHead"><div><span>KÖRPER & FOKUS</span><h3>Trainingsfokus · 30 Tage</h3></div><small>Trainingsmenge, nicht Muskelstärke</small></div><div class="stableBodyGrid"><div><div class="stableAnatomy">${anatomyFigure(load)}</div><div class="stableLegend"><span><i class="l0"></i>keine Daten</span><span><i class="l1"></i>leicht</span><span><i class="l2"></i>mittel</span><span><i class="l3"></i>stark</span></div><a class="anatomyCredit" href="https://commons.wikimedia.org/wiki/File:Muscles_front_and_back.svg" target="_blank" rel="noopener">Anatomie: OpenStax & Tomáš Kebert · CC BY-SA 4.0</a></div><div class="muscleRows">${muscleRows(load)}</div></div></section>`;
+    return `<section class="stableCard stableBody bodyFocusV2" id="stableBodyStatus"><div class="stableHead"><div><span>KÖRPER & FOKUS</span><h3>Muskelkarte · 30 Tage</h3></div><small>Aus deinen gespeicherten Sätzen berechnet</small></div><div class="bodyFocusIntro">Tippe auf eine Muskelgruppe oder direkt auf die Figur, um den Bereich hervorzuheben.</div><div class="stableAnatomy">${anatomyFigure(load)}</div><div class="stableLegend"><span><i class="l0"></i>keine Daten</span><span><i class="l1"></i>leicht</span><span><i class="l2"></i>mittel</span><span><i class="l3"></i>stark</span></div><div class="muscleRows bodyFocusRows">${muscleRows(load)}</div></section>`;
   }
 
   function lastDays(ev,count=7){
