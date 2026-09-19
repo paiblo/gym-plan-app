@@ -3,9 +3,12 @@ if(window.__tpCustomV2)return;window.__tpCustomV2=true;
 const KEY='gym:theme:v1',META_KEY='gym:meta:theme',BRAND='Trainingsplaner by Paiblo';
 const DEF={primary:'#ff8a3d',secondary:'#ffb06d',info:'#38bdf8',success:'#53d28a',warning:'#d39a3a',danger:'#ff5f70',background:'#07090c',surface:'#11171e',surface2:'#0b1016',border:'#202a35',text:'#f6f8fb',muted:'#7e8997',self:'#ff9450',friend:'#38bdf8',chartSets:'#ff9450',chartVolume:'#ffb06d',chartWeight:'#38bdf8',muscleNone:'#35404d',muscleLight:'#38bdf8',muscleMedium:'#ff9b55',muscleStrong:'#ff4d5f'};
 const F=[['primary','Primärfarbe'],['secondary','Sekundärfarbe'],['info','Info / Links'],['success','Erfolg'],['warning','Warnung'],['danger','Fehler / Gefahr'],['background','App-Hintergrund'],['surface','Karten'],['surface2','Felder / Unterflächen'],['border','Rahmen'],['text','Haupttext'],['muted','Sekundärtext'],['self','Vergleich · Du'],['friend','Vergleich · Freund'],['chartSets','Diagramm · Sätze'],['chartVolume','Diagramm · Volumen'],['chartWeight','Diagramm · Gewicht'],['muscleNone','Muskel · keine Daten'],['muscleLight','Muskel · leicht'],['muscleMedium','Muskel · mittel'],['muscleStrong','Muskel · stark']];
-let theme=load(),timer=null,patching=false;
+let theme=load(),timer=null,patching=false,themeCloudBusy=false,themeCloudTimer=null;
 const avatarCache=new Map();
-function load(){try{return {...DEF,...(JSON.parse(localStorage.getItem(KEY)||'null')||{})}}catch{return {...DEF}}}
+function cleanTheme(value){const out={};for(const[k]of F){const v=value?.[k];if(/^#[0-9a-f]{6}$/i.test(v||''))out[k]=v.toLowerCase()}return out}
+function load(){try{return {...DEF,...cleanTheme(JSON.parse(localStorage.getItem(KEY)||'null')||{})}}catch{return {...DEF}}}
+function localThemeTime(){const n=Number(localStorage.getItem(META_KEY)||0);return Number.isFinite(n)?n:0}
+function storeLocalTheme(value,ts=Date.now()){const clean={...DEF,...cleanTheme(value)};try{if(typeof rawSetItem==='function'){rawSetItem.call(localStorage,KEY,JSON.stringify(clean));rawSetItem.call(localStorage,META_KEY,String(ts))}else{localStorage.setItem(KEY,JSON.stringify(clean));localStorage.setItem(META_KEY,String(ts))}}catch{localStorage.setItem(KEY,JSON.stringify(clean));localStorage.setItem(META_KEY,String(ts))}theme=clean;return clean}
 function hex(x){return /^#[0-9a-f]{6}$/i.test(x||'')}
 function onColor(x){if(!hex(x))return'#fff';const n=parseInt(x.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;return(.299*r+.587*g+.114*b)/255>.62?'#090b0f':'#fff'}
 function varName(k){return '--tp-'+k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())}
@@ -19,9 +22,26 @@ function apply(save=false){
   document.documentElement.style.setProperty('--tp-on-primary',onColor(theme.primary));
   document.documentElement.style.setProperty('--tp-on-secondary',onColor(theme.secondary));
   setAttr(document.querySelector('meta[name="theme-color"]'),'content',theme.background);
-  if(save){localStorage.setItem(KEY,JSON.stringify(theme));localStorage.setItem(META_KEY,String(Date.now()))}
+  if(save)storeLocalTheme(theme,Date.now());
   recolor();syncInputs();
 }
+async function saveCloudTheme(value=theme,ts=localThemeTime()||Date.now()){
+  const id=uid();if(!id||typeof api!=='function'||!navigator.onLine)return false;
+  const body={user_id:id,ui_theme:cleanTheme(value),ui_theme_updated_at:new Date(ts).toISOString(),updated_at:new Date().toISOString()};
+  try{const r=await api('/rest/v1/profile_details?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(body)});return r.ok}catch{return false}
+}
+async function syncThemeCloud(){
+  if(themeCloudBusy)return false;const id=uid();if(!id||typeof api!=='function'||!navigator.onLine)return false;themeCloudBusy=true;
+  try{
+    const r=await api(`/rest/v1/profile_details?select=ui_theme,ui_theme_updated_at&user_id=eq.${encodeURIComponent(id)}&limit=1`);if(!r.ok)return false;
+    const rows=await r.json(),row=rows[0]||{},remote=cleanTheme(row.ui_theme||{}),remoteKeys=Object.keys(remote).length,remoteTs=row.ui_theme_updated_at?Date.parse(row.ui_theme_updated_at):0,localTs=localThemeTime(),hasLocal=!!localStorage.getItem(KEY);
+    if(remoteKeys&&(!hasLocal||remoteTs>localTs+1000)){storeLocalTheme(remote,remoteTs||Date.now());apply(false);schedule();return true}
+    if(hasLocal&&localTs>remoteTs+1000){await saveCloudTheme(theme,localTs);return true}
+    if(!remoteKeys&&hasLocal){await saveCloudTheme(theme,localTs||Date.now());return true}
+    return true;
+  }catch{return false}finally{themeCloudBusy=false}
+}
+function scheduleThemeCloud(delay=450){clearTimeout(themeCloudTimer);themeCloudTimer=setTimeout(()=>syncThemeCloud(),delay)}
 async function avatarUrl(id){
   if(!id)return null;
   if(avatarCache.has(id))return avatarCache.get(id);
@@ -81,8 +101,8 @@ function settings(){
   const a=document.querySelector('#area');if(!a||document.body.dataset.page!=='settings'||a.querySelector('#themeSettings'))return;
   const intro=a.querySelector('.pageIntro');if(intro)intro.insertAdjacentHTML('afterend',panel());else a.insertAdjacentHTML('afterbegin',panel());
   a.querySelectorAll('[data-theme]').forEach(i=>i.oninput=()=>{theme[i.dataset.theme]=i.value;apply();setText(a.querySelector(`[data-code="${i.dataset.theme}"]`),i.value.toUpperCase())});
-  a.querySelector('#themeSave').onclick=()=>{apply(true);setText(a.querySelector('#themeMsg'),'Farben gespeichert und mit deinem Account synchronisiert.')};
-  a.querySelector('#themeReset').onclick=()=>{theme={...DEF};apply(true);setText(a.querySelector('#themeMsg'),'Standardfarben wiederhergestellt.')};
+  a.querySelector('#themeSave').onclick=async()=>{const msg=a.querySelector('#themeMsg');apply(true);setText(msg,'Farben lokal gespeichert · Cloud wird bestätigt …');const ok=await saveCloudTheme(theme,localThemeTime());setText(msg,ok?'Farben sicher in deiner Cloud gespeichert.':'Farben lokal gespeichert · Cloud-Sync folgt automatisch.');if(!ok)scheduleThemeCloud(1400)};
+  a.querySelector('#themeReset').onclick=async()=>{const msg=a.querySelector('#themeMsg');theme={...DEF};apply(true);setText(msg,'Standardfarben gespeichert · Cloud wird bestätigt …');const ok=await saveCloudTheme(theme,localThemeTime());setText(msg,ok?'Standardfarben sicher in deiner Cloud gespeichert.':'Standardfarben lokal gespeichert · Cloud-Sync folgt automatisch.');if(!ok)scheduleThemeCloud(1400)};
 }
 function syncInputs(){document.querySelectorAll('[data-theme]').forEach(i=>{if(i.value!==theme[i.dataset.theme])i.value=theme[i.dataset.theme];setText(document.querySelector(`[data-code="${i.dataset.theme}"]`),theme[i.dataset.theme].toUpperCase())})}
 async function patch(){
@@ -91,9 +111,9 @@ async function patch(){
 }
 function schedule(){clearTimeout(timer);timer=setTimeout(()=>patch(),60)}
 apply();
-const start=()=>{patch();new MutationObserver(muts=>{if(muts.some(m=>m.addedNodes.length||m.removedNodes.length))schedule()}).observe(document.body,{childList:true,subtree:true})};
+const start=()=>{patch();scheduleThemeCloud(900);setTimeout(()=>syncThemeCloud(),3200);new MutationObserver(muts=>{if(muts.some(m=>m.addedNodes.length||m.removedNodes.length))schedule()}).observe(document.body,{childList:true,subtree:true})};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-window.addEventListener('storage',e=>{if(e.key===KEY){theme=load();apply();schedule()}});window.addEventListener('gym:snapshot-applied',()=>{theme=load();apply();schedule()});window.addEventListener('gym:avatar-updated',()=>{invalidateOwnAvatar();schedule()});
+window.addEventListener('storage',e=>{if(e.key===KEY){theme=load();apply();schedule();scheduleThemeCloud(700)}});window.addEventListener('gym:snapshot-applied',()=>{theme=load();apply();schedule();scheduleThemeCloud(600)});window.addEventListener('gym:avatar-updated',()=>{invalidateOwnAvatar();schedule()});window.addEventListener('online',()=>scheduleThemeCloud(250));window.addEventListener('focus',()=>scheduleThemeCloud(450));
 document.addEventListener('change',e=>{if(e.target?.id==='profileAvatarFile'||e.target?.id==='obAvatar'){setTimeout(()=>{invalidateOwnAvatar();schedule()},1200)}});
-window.TrainingsplanerTheme={get:()=>({...theme}),reset:()=>{theme={...DEF};apply(true)},apply:x=>{theme={...theme,...x};apply(true)},refreshAvatars:()=>{avatarCache.clear();schedule()}};
+window.TrainingsplanerTheme={get:()=>({...theme}),reset:async()=>{theme={...DEF};apply(true);return saveCloudTheme(theme,localThemeTime())},apply:async x=>{theme={...theme,...cleanTheme(x)};apply(true);return saveCloudTheme(theme,localThemeTime())},sync:syncThemeCloud,refreshAvatars:()=>{avatarCache.clear();schedule()}};
 })();
