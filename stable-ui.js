@@ -207,26 +207,32 @@
       const end=new Date(now);end.setDate(end.getDate()-offset*7);end.setHours(23,59,59,999);
       const start=new Date(end);start.setDate(start.getDate()-6);start.setHours(0,0,0,0);
       const same=ev.filter(e=>{const d=new Date(e.occurred_at);return d>=start&&d<=end});
-      out.push({label:offset===0?'Jetzt':`-${offset}W`,volume:same.reduce((a,e)=>a+Number(e.volume||0),0),sets:same.reduce((a,e)=>a+Number(e.set_count||0),0)});
+      const active=new Set(same.map(e=>localDay(e.occurred_at)));
+      out.push({label:offset===0?'Jetzt':`-${offset}W`,volume:same.reduce((a,e)=>a+Number(e.volume||0),0),sets:same.reduce((a,e)=>a+Number(e.set_count||0),0),prs:same.reduce((a,e)=>a+Number(e.pr_count||0),0),days:active.size});
     }
     return out;
   }
-  function barSvg(items,key,color='#ff9450'){
+  function barSvg(items,key,color='var(--tp-chart-sets)'){
     const values=items.map(x=>Number(x[key]||0)),max=Math.max(1,...values),w=360,h=118,bw=32,gap=(w-30-bw*items.length)/Math.max(1,items.length-1);
-    return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Balkendiagramm">${items.map((x,i)=>{const val=values[i],bh=val?Math.max(5,72*val/max):3,xx=15+i*(bw+gap),yy=88-bh;return `<rect x="${xx}" y="${yy}" width="${bw}" height="${bh}" rx="7" fill="${val?color:'#222b35'}"/><text x="${xx+bw/2}" y="107" text-anchor="middle" fill="#748191" font-size="9">${esc(x.label)}</text>`}).join('')}<line x1="10" y1="89" x2="350" y2="89" stroke="#222c36"/></svg>`;
+    return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Balkendiagramm">${items.map((x,i)=>{const val=values[i],bh=val?Math.max(5,72*val/max):3,xx=15+i*(bw+gap),yy=88-bh;return `<rect x="${xx}" y="${yy}" width="${bw}" height="${bh}" rx="7" style="fill:${val?color:'var(--tp-border)'}"/><text x="${xx+bw/2}" y="107" text-anchor="middle" style="fill:var(--tp-muted)" font-size="9">${esc(x.label)}</text>`}).join('')}<line x1="10" y1="89" x2="350" y2="89" style="stroke:var(--tp-border)"/></svg>`;
   }
-  function lineSvg(values,color='#38bdf8'){
+  function lineSvg(values,color='var(--tp-chart-weight)'){
     const n=values.map(Number).filter(Number.isFinite);
     if(n.length<2)return `<div class="chartEmpty"><b>${n.length?fmt1(n[0])+' kg':'Noch kein Gewicht'}</b><span>${n.length?'Ein zweiter Messpunkt erzeugt den Verlauf.':'Speichere dein Gewicht im Profil.'}</span></div>`;
     const w=360,h=118,p=12,min=Math.min(...n),max=Math.max(...n),span=Math.max(.1,max-min);
     const pts=n.map((v,i)=>`${p+(w-2*p)*i/(n.length-1)},${h-p-(h-2*p)*(v-min)/span}`).join(' ');
-    return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Gewichtsverlauf"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${pts.split(' ').map(pt=>{const[x,y]=pt.split(',');return `<circle cx="${x}" cy="${y}" r="3" fill="#0d1218" stroke="${color}" stroke-width="2"/>`}).join('')}</svg>`;
+    return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Gewichtsverlauf"><polyline points="${pts}" fill="none" style="stroke:${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${pts.split(' ').map(pt=>{const[x,y]=pt.split(',');return `<circle cx="${x}" cy="${y}" r="3" style="fill:var(--tp-surface-2);stroke:${color}" stroke-width="2"/>`}).join('')}</svg>`;
   }
-  function analyticsCard(ev,w){
+  function muscleDistributionSvg(load){
+    const labels={Brust:'Br',Rücken:'Rü','Unterer Rücken':'UR',Schultern:'Sch',Arme:'Ar',Core:'Co',Beine:'Be'};
+    const items=Object.entries(load||{}).map(([label,v])=>({label:labels[label]||label.slice(0,2),sets:Number(v?.sets||0)}));
+    return barSvg(items,'sets','var(--tp-muscle-medium)');
+  }
+  function analyticsCard(ev,w,load){
     const days=lastDays(ev),weeks=lastWeeks(ev),weights=[...(w||[])].reverse().slice(-12).map(x=>Number(x.weight_kg));
-    const sets7=days.reduce((a,x)=>a+x.sets,0),vol4=weeks.reduce((a,x)=>a+x.volume,0),latest=w?.[0]?.weight_kg;
+    const sets7=days.reduce((a,x)=>a+x.sets,0),vol4=weeks.reduce((a,x)=>a+x.volume,0),prs4=weeks.reduce((a,x)=>a+x.prs,0),days4=weeks.reduce((a,x)=>a+x.days,0),latest=w?.[0]?.weight_kg;
     const activeDays=new Set(ev.filter(e=>new Date(e.occurred_at)>=new Date(Date.now()-30*864e5)).map(e=>localDay(e.occurred_at))).size;
-    return `<section class="stableCard" id="stableAnalytics"><div class="stableHead"><div><span>FORTSCHRITT</span><h3>Aktuelle Statistiken</h3></div><small>${activeDays} aktive ${activeDays===1?'Tag':'Tage'} · letzte 30 Tage</small></div><div class="stableCharts"><div class="chartCard"><div class="chartTitle"><b>Sätze · 7 Tage</b><span>${fmt(sets7)} gesamt</span></div>${barSvg(days,'sets','#ff9450')}</div><div class="chartCard"><div class="chartTitle"><b>Volumen · 4 Wochen</b><span>${fmt(vol4)} kg</span></div>${barSvg(weeks,'volume','#ffb06d')}</div><div class="chartCard"><div class="chartTitle"><b>Gewicht</b><span>${latest?fmt1(latest)+' kg':'keine Messung'}</span></div>${lineSvg(weights)}</div><div class="chartCard dataCard"><div class="chartTitle"><b>Datenbasis</b><span>live</span></div><p>Die Grafiken werden direkt aus deinen gespeicherten Trainingsevents und Gewichtsmessungen berechnet. Beim erneuten Öffnen des Dashboards werden sie frisch geladen.</p></div></div></section>`;
+    return `<section class="stableCard dashboardOverviewCard" id="stableAnalytics"><div class="stableHead"><div><span>DASHBOARD</span><h3>Deine Entwicklung</h3></div><small>Live aus deinen gespeicherten Daten · letzte 30 Tage</small></div><div class="dashboardMiniKpis"><div><span>Aktive Tage</span><b>${activeDays}</b></div><div><span>Sätze · 7 T.</span><b>${fmt(sets7)}</b></div><div><span>PRs · 4 W.</span><b>${fmt(prs4)}</b></div><div><span>Volumen · 4 W.</span><b>${fmt(vol4)} kg</b></div></div><div class="stableCharts"><div class="chartCard"><div class="chartTitle"><b>Sätze · 7 Tage</b><span>${fmt(sets7)} gesamt</span></div>${barSvg(days,'sets','var(--tp-chart-sets)')}</div><div class="chartCard"><div class="chartTitle"><b>Trainingshäufigkeit · 4 Wochen</b><span>${fmt(days4)} Trainingstage</span></div>${barSvg(weeks,'days','var(--tp-primary)')}</div><div class="chartCard"><div class="chartTitle"><b>Volumen · 4 Wochen</b><span>${fmt(vol4)} kg</span></div>${barSvg(weeks,'volume','var(--tp-chart-volume)')}</div><div class="chartCard"><div class="chartTitle"><b>PRs · 4 Wochen</b><span>${fmt(prs4)} gesamt</span></div>${barSvg(weeks,'prs','var(--tp-success)')}</div><div class="chartCard"><div class="chartTitle"><b>Gewichtsverlauf</b><span>${latest?fmt1(latest)+' kg':'keine Messung'}</span></div>${lineSvg(weights,'var(--tp-chart-weight)')}</div><div class="chartCard"><div class="chartTitle"><b>Muskelverteilung · 30 Tage</b><span>nach Sätzen</span></div>${muscleDistributionSvg(load)}</div></div></section>`;
   }
 
   async function refreshDashboard(token=renderToken){
@@ -241,7 +247,8 @@
       area.querySelector('.bodyOverview')?.remove();
       let host=area.querySelector('#stableDashboardData');
       if(!host){host=document.createElement('div');host.id='stableDashboardData';const quick=area.querySelector('.quickSection');quick?quick.insertAdjacentElement('beforebegin',host):area.appendChild(host)}
-      host.innerHTML=bodyCard(muscleLoads(ev))+analyticsCard(ev,w);
+      const load=muscleLoads(ev);
+      host.innerHTML=analyticsCard(ev,w,load)+bodyCard(load);
       bindMuscleInteractions();
       host.dataset.updated=new Date().toISOString();
     }catch(e){
@@ -355,6 +362,7 @@
     return window.__paibloLastSelfCheck;
   }
   window.paibloSelfCheck=runSelfCheck;
+  window.paibloRefreshDashboard=()=>refreshDashboard(renderToken);
 
   function boot(){
     if(typeof render!=='function'||!document.querySelector('#area')||typeof api!=='function'){setTimeout(boot,120);return}
