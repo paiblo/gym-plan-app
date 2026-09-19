@@ -28,3 +28,21 @@ body.premiumApp main{width:100%;max-width:760px;margin:0 auto;padding:12px 14px 
 .stableCompare{margin-top:10px}.compareChartRow{display:grid;grid-template-columns:110px 1fr;gap:9px;align-items:center;margin:10px 0}.compareChartRow>span{font-size:10px;color:#8c98a7}.compareTwin{display:grid;gap:5px}.compareTwin i{display:block;height:8px;border-radius:999px;min-width:2px}.compareTwin .me{background:#ff9450}.compareTwin .friend{background:#38bdf8}.compareValues{display:flex;justify-content:space-between;font-size:9px;color:#727f8f;margin-top:4px}
 .realAnatomy,.bodyHeatmap{max-width:100%!important;overflow:hidden!important}.realAnatomy img{max-width:100%!important;height:auto!important}
 @media(min-width:560px){.dashboardGrid{grid-template-columns:1.15fr .85fr!important}.premiumStats{grid-template-columns:repeat(4,minmax(0,1fr))!important}.stableBodyGrid{grid-template-columns:1.08fr .92fr}.stableCharts{grid-template-columns:1fr 1fr}.profileHero{grid-template-columns:108px minmax(0,1fr)}.profileAvatarWrap,#profileAvatarEdit{width:108px!important;height:108px!important}}
+
+
+/* Präzise Muskel-Heatmap: beide anatomischen Ansichten werden aus derselben Quelle beschnitten.
+   Dadurch bleiben Bild und Markierungen bei jeder Displaygröße exakt im selben Koordinatensystem. */
+.stableAnatomy{min-height:0!important;padding:10px 6px!important;display:block!important;overflow:hidden!important}
+.anatomyPair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;align-items:end;width:100%;max-width:620px;margin:0 auto}
+.anatomyFigure{display:block;width:100%;height:auto;overflow:visible;touch-action:manipulation}
+.anatomyBase{opacity:.82;filter:saturate(.8) brightness(.83) contrast(1.08)}
+.anatomyZone{cursor:pointer;stroke:rgba(255,255,255,.20);stroke-width:2.4;vector-effect:non-scaling-stroke;transition:opacity .16s ease,stroke .16s ease,filter .16s ease;outline:none}
+.anatomyZone.none{opacity:.035}.anatomyZone.light{opacity:.48}.anatomyZone.medium{opacity:.58}.anatomyZone.strong{opacity:.68}
+.anatomyZone:hover,.anatomyZone:focus-visible,.anatomyZone.is-selected{opacity:.88!important;stroke:rgba(255,255,255,.92)!important;stroke-width:3.5!important;filter:drop-shadow(0 0 7px rgba(255,255,255,.22))}
+.anatomyCredit{display:block;margin-top:7px;color:#657282;font-size:8px;line-height:1.3;text-align:center;text-decoration:none}
+.anatomyCredit:hover{text-decoration:underline}
+.muscleRow{appearance:none;-webkit-appearance:none;width:100%;border:1px solid transparent;background:transparent;color:inherit;text-align:left;padding:5px 6px;border-radius:11px;font:inherit;cursor:pointer}
+.muscleRow>div:first-child{min-width:0}.muscleRow>div:first-child span{display:block;color:#d4dbe4;font-weight:800}.muscleRow>div:first-child small{display:block;color:#727f90;font-size:9px;margin-top:2px}
+.muscleRow.is-selected{border-color:#344353;background:rgba(255,255,255,.035)}
+.muscleRow:focus-visible{outline:2px solid #73859a;outline-offset:2px}
+@media(max-width:420px){.stableAnatomy{padding:7px 0!important}.anatomyPair{width:108%;margin-left:-4%;}.muscleRow{grid-template-columns:88px minmax(70px,1fr) 68px!important;gap:7px!important;padding:5px 2px!important}}
