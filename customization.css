@@ -39,3 +39,10 @@ body.premiumApp .day.active,.tab.on,.blue{background:var(--tp-primary)!important
 .anatomyZone.strong{fill:var(--tp-muscle-strong)!important}
 .muscleRow.is-selected{border-color:color-mix(in srgb,var(--tp-primary) 42%,var(--tp-border))!important;background:color-mix(in srgb,var(--tp-primary) 7%,var(--tp-surface))!important}
 .anatomyCredit{color:var(--tp-muted)!important}
+
+
+/* Theme-Farben für Body Focus V2 */
+.bodyMuscleZone.none{fill:var(--tp-muscle-none)!important}
+.bodyMuscleZone.light{fill:var(--tp-muscle-light)!important}
+.bodyMuscleZone.medium{fill:var(--tp-muscle-medium)!important}
+.bodyMuscleZone.strong{fill:var(--tp-muscle-strong)!important}
