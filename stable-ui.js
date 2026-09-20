@@ -419,4 +419,5 @@
     setTimeout(runSelfCheck,1800);
   }
   boot();
+  window.addEventListener('gym:friend-compare-rendered',()=>setTimeout(patchCompareGraphics,60));
 })();
