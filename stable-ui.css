@@ -156,3 +156,21 @@ body.premiumApp main{width:100%;max-width:760px;margin:0 auto;padding:12px 14px 
   .exerciseSide{padding:7px 6px}
   .exerciseSide strong{font-size:11px}
 }
+
+
+/* Dynamic rank breakdown */
+#rankDynamics{margin:12px 0 14px}
+.rankDynamicTotal{border:1px solid var(--tp-border,#202a35);background:var(--tp-surface-2,#0b1016);border-radius:15px;padding:13px;margin-bottom:9px}
+.rankDynamicTotal span,.rankDynamicGrid span{display:block;color:var(--tp-muted,#7e8997);font-size:8px;font-weight:900;letter-spacing:.55px;text-transform:uppercase}
+.rankDynamicTotal b{display:block;color:var(--tp-text,#f6f8fb);font-size:24px;line-height:1;margin:5px 0}
+.rankDynamicTotal small{color:var(--tp-muted,#7e8997);font-size:9px}
+.rankDynamicGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.rankDynamicGrid>div{min-width:0;border:1px solid var(--tp-border,#202a35);background:var(--tp-surface-2,#0b1016);border-radius:12px;padding:10px}
+.rankDynamicGrid b{display:block;margin:4px 0;color:var(--tp-text,#f6f8fb);font-size:14px}
+.rankDynamicGrid small{display:block;color:var(--tp-muted,#7e8997);font-size:8px;line-height:1.35}
+.rankDynamicGrid .positive{border-color:color-mix(in srgb,var(--tp-success,#53d28a) 35%,var(--tp-border,#202a35))}
+.rankDynamicGrid .positive b{color:var(--tp-success,#53d28a)}
+.rankDynamicGrid .negative{border-color:color-mix(in srgb,var(--tp-danger,#ff5f70) 42%,var(--tp-border,#202a35));background:color-mix(in srgb,var(--tp-danger,#ff5f70) 6%,var(--tp-surface-2,#0b1016))}
+.rankDynamicGrid .negative b{color:var(--tp-danger,#ff5f70)}
+.rankDynamicExplain{margin:10px 1px 0;color:var(--tp-muted,#7e8997);font-size:9px;line-height:1.5}
+@media(max-width:380px){.rankDynamicGrid{grid-template-columns:1fr}}
