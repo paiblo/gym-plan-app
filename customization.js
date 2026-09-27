@@ -42,6 +42,13 @@ async function syncThemeCloud(){
   }catch{return false}finally{themeCloudBusy=false}
 }
 function scheduleThemeCloud(delay=450){clearTimeout(themeCloudTimer);themeCloudTimer=setTimeout(()=>syncThemeCloud(),delay)}
+function waitTheme(ms){return new Promise(r=>setTimeout(r,ms))}
+async function flushThemeCloud(){
+  const id=uid();if(!id||typeof api!=='function'||!navigator.onLine)return false;
+  for(let i=0;i<6&&themeCloudBusy;i++)await waitTheme(120);
+  if(themeCloudBusy)return false;
+  return saveCloudTheme(theme,localThemeTime()||Date.now());
+}
 async function avatarUrl(id){
   if(!id)return null;
   if(avatarCache.has(id))return avatarCache.get(id);
@@ -115,5 +122,5 @@ const start=()=>{patch();scheduleThemeCloud(900);setTimeout(()=>syncThemeCloud()
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 window.addEventListener('storage',e=>{if(e.key===KEY){theme=load();apply();schedule();scheduleThemeCloud(700)}});window.addEventListener('gym:snapshot-applied',()=>{theme=load();apply();schedule();scheduleThemeCloud(600)});window.addEventListener('gym:theme-restored',()=>{theme=load();apply(false);schedule()});window.addEventListener('gym:avatar-updated',()=>{invalidateOwnAvatar();schedule()});window.addEventListener('online',()=>scheduleThemeCloud(250));window.addEventListener('focus',()=>scheduleThemeCloud(450));
 document.addEventListener('change',e=>{if(e.target?.id==='profileAvatarFile'||e.target?.id==='obAvatar'){setTimeout(()=>{invalidateOwnAvatar();schedule()},1200)}});
-window.TrainingsplanerTheme={get:()=>({...theme}),reset:async()=>{theme={...DEF};apply(true);return saveCloudTheme(theme,localThemeTime())},apply:async x=>{theme={...theme,...cleanTheme(x)};apply(true);return saveCloudTheme(theme,localThemeTime())},sync:syncThemeCloud,refreshAvatars:()=>{avatarCache.clear();schedule()}};
+window.TrainingsplanerTheme={get:()=>({...theme}),reset:async()=>{theme={...DEF};apply(true);return flushThemeCloud()},apply:async x=>{theme={...theme,...cleanTheme(x)};apply(true);return flushThemeCloud()},sync:flushThemeCloud,refreshAvatars:()=>{avatarCache.clear();schedule()}};
 })();
