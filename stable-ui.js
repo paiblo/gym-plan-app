@@ -94,6 +94,12 @@
     return '';
   }
   function bucket(group,name=''){
+    try{
+      if(typeof window.planMuscleBucket==='function'){
+        const byGroup=window.planMuscleBucket(group);if(byGroup)return byGroup;
+        const byName=window.planMuscleBucket(name);if(byName)return byName;
+      }
+    }catch{}
     const s=(String(group)+' '+String(name)).toLowerCase();
     if(s.includes('unterer r')||s.includes('lower back')||s.includes('lenden')||s.includes('kreuzheben'))return'Unterer Rücken';
     if(s.includes('schulter')||s.includes('seitheben')||s.includes('shoulder'))return'Schultern';
@@ -420,4 +426,5 @@
   }
   boot();
   window.addEventListener('gym:friend-compare-rendered',()=>setTimeout(patchCompareGraphics,60));
+  window.addEventListener('gym:plan-changed',()=>{if(currentMode()==='dashboard')scheduleDashboard(80)});
 })();
