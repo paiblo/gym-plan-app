@@ -100,7 +100,7 @@ function panel(){return `<section id="themeSettings" class="premiumPanel tpTheme
 function settings(){
   const a=document.querySelector('#area');if(!a||document.body.dataset.page!=='settings'||a.querySelector('#themeSettings'))return;
   const intro=a.querySelector('.pageIntro');if(intro)intro.insertAdjacentHTML('afterend',panel());else a.insertAdjacentHTML('afterbegin',panel());
-  a.querySelectorAll('[data-theme]').forEach(i=>i.oninput=()=>{theme[i.dataset.theme]=i.value;apply();setText(a.querySelector(`[data-code="${i.dataset.theme}"]`),i.value.toUpperCase())});
+  a.querySelectorAll('[data-theme]').forEach(i=>i.oninput=()=>{theme[i.dataset.theme]=i.value;apply(true);setText(a.querySelector(`[data-code="${i.dataset.theme}"]`),i.value.toUpperCase());setText(a.querySelector('#themeMsg'),'Änderung gespeichert · Cloud-Sync läuft automatisch …');scheduleThemeCloud(650)});
   a.querySelector('#themeSave').onclick=async()=>{const msg=a.querySelector('#themeMsg');apply(true);setText(msg,'Farben lokal gespeichert · Cloud wird bestätigt …');const ok=await saveCloudTheme(theme,localThemeTime());setText(msg,ok?'Farben sicher in deiner Cloud gespeichert.':'Farben lokal gespeichert · Cloud-Sync folgt automatisch.');if(!ok)scheduleThemeCloud(1400)};
   a.querySelector('#themeReset').onclick=async()=>{const msg=a.querySelector('#themeMsg');theme={...DEF};apply(true);setText(msg,'Standardfarben gespeichert · Cloud wird bestätigt …');const ok=await saveCloudTheme(theme,localThemeTime());setText(msg,ok?'Standardfarben sicher in deiner Cloud gespeichert.':'Standardfarben lokal gespeichert · Cloud-Sync folgt automatisch.');if(!ok)scheduleThemeCloud(1400)};
 }
